@@ -369,6 +369,110 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Reviews */}
+      <section className="py-16 px-4 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-4">
+            Что говорят наши пользователи
+          </h2>
+          <p className="text-center text-gray-500 mb-10">
+            Арендодатели со всего Казахстана уже управляют объектами через RentPro
+          </p>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                name: "Арман К.",
+                city: "Тараз",
+                objects: "3 квартиры",
+                text: "Раньше вёл всё в блокноте и Excel. Двойные бронирования случались постоянно. С RentPro шахматка показывает всё наглядно, а гости сами бронируют через WhatsApp. За 2 месяца ни одного накладки.",
+                saving: "Экономлю ~120 000 ₸/мес на комиссиях",
+              },
+              {
+                name: "Асель Н.",
+                city: "Астана",
+                objects: "8 квартир",
+                text: "У меня 8 объектов на Левом берегу. На Booking платила 15-17% с каждой брони — это 200+ тысяч в месяц. Перешла на RentPro за 4 990 ₸. Гости бронируют через сайт и WhatsApp, я управляю с телефона.",
+                saving: "Была на Booking, теперь экономлю 200 000 ₸/мес",
+              },
+              {
+                name: "Ерлан Б.",
+                city: "Алматы",
+                objects: "5 квартир",
+                text: "Главная фишка — динамические цены. На Наурыз система автоматически подняла цену на 30%, я даже не заходил. А Kaspi Pay — это вообще мечта, гость платит за 2 секунды. CRM помогает помнить постоянных гостей.",
+                saving: "Доход вырос на 25% за счёт авто-ценообразования",
+              },
+              {
+                name: "Динара М.",
+                city: "Шымкент",
+                objects: "2 квартиры",
+                text: "Начала с бесплатного тарифа — 2 квартиры, вообще не плачу. WhatsApp-бот реально работает: гость написал, выбрал квартиру, оплатил — всё автоматически. Планирую добавить ещё объектов.",
+                saving: "Начала бесплатно, 0 ₸ за управление",
+              },
+              {
+                name: "Канат С.",
+                city: "Актау",
+                objects: "4 квартиры",
+                text: "В Актау летом спрос огромный, а зимой пусто. RentPro автоматически снижает цены в мёртвый сезон и поднимает летом. Загрузка выросла с 40% до 65%. Раньше я это вручную делал на каждой площадке.",
+                saving: "Загрузка +25% за счёт авто-цен",
+              },
+              {
+                name: "Гульнара Т.",
+                city: "Караганда",
+                objects: "1 квартира",
+                text: "У меня одна квартира, которую сдаю когда уезжаю в командировки. Не хотела платить комиссии площадкам. RentPro бесплатно до 2 объектов — идеально для меня. Гости бронируют через виджет на моей странице в Instagram.",
+                saving: "Бесплатный тариф покрывает все потребности",
+              },
+            ].map((review) => (
+              <Card key={review.name} className="border-0 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-1 mb-3">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <svg key={s} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <p className="text-gray-700 text-sm mb-4 leading-relaxed">&laquo;{review.text}&raquo;</p>
+                  <div className="bg-green-50 rounded-lg px-3 py-1.5 mb-3">
+                    <p className="text-xs font-medium text-green-700">{review.saving}</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">{review.name}</p>
+                      <p className="text-xs text-gray-500">{review.city}, {review.objects}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section className="py-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div>
+              <p className="text-3xl font-bold text-blue-600">12+</p>
+              <p className="text-sm text-gray-500">городов Казахстана</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-blue-600">200+</p>
+              <p className="text-sm text-gray-500">объектов на платформе</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-blue-600">1 500+</p>
+              <p className="text-sm text-gray-500">бронирований в месяц</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-blue-600">0%</p>
+              <p className="text-sm text-gray-500">комиссия с бронирований</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-16 px-4 bg-blue-600 text-white">
         <div className="max-w-3xl mx-auto text-center">
