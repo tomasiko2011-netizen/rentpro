@@ -4,6 +4,7 @@ import { bookings, properties, guests, transactions } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { sendWhatsApp, templates } from "@/lib/waha";
 import { pusherServer, EVENTS } from "@/lib/pusher";
+import { createKaspiPayment, formatPaymentMessage } from "@/lib/kaspi";
 
 // Public booking — no auth required. Guest books directly.
 export async function POST(req: NextRequest) {
@@ -104,11 +105,20 @@ export async function POST(req: NextRequest) {
       await pusherServer.trigger(`user-${property.userId}`, EVENTS.BOOKING_CREATED, booking);
     } catch {}
 
-    // WhatsApp: confirm to guest
+    // Generate Kaspi payment
+    const payment = await createKaspiPayment({
+      bookingId: booking.id,
+      amount: totalPrice,
+      description: `${property.name} — ${nights} ноч.`,
+    });
+
+    // WhatsApp: confirm + payment link to guest
     try {
+      const confirmMsg = templates.bookingConfirmed(guestName, property.name, checkIn, checkOut, totalPrice);
+      const paymentMsg = formatPaymentMessage(totalPrice, payment.paymentId, payment.paymentUrl);
       await sendWhatsApp({
         phone: guestPhone,
-        text: templates.bookingConfirmed(guestName, property.name, checkIn, checkOut, totalPrice),
+        text: `${confirmMsg}\n\n${paymentMsg}`,
       });
     } catch {}
 
@@ -120,7 +130,9 @@ export async function POST(req: NextRequest) {
       nights,
       totalPrice,
       status: "pending",
-      message: "Бронирование создано! Ожидайте подтверждения.",
+      paymentId: payment.paymentId,
+      paymentUrl: payment.paymentUrl || null,
+      message: "Бронирование создано! Оплатите через Kaspi Pay.",
     });
   } catch (error) {
     console.error("Public booking error:", error);

@@ -20,6 +20,7 @@ export default function PropertyPage({ params }: { params: Promise<{ id: string 
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [paymentInfo, setPaymentInfo] = useState<{ paymentId: string; paymentUrl: string | null } | null>(null);
   const [form, setForm] = useState({
     checkIn: searchParams.get("checkIn") || "",
     checkOut: searchParams.get("checkOut") || "",
@@ -38,18 +39,27 @@ export default function PropertyPage({ params }: { params: Promise<{ id: string 
       .catch(() => setLoading(false));
   }, [id]);
 
-  const nights =
-    form.checkIn && form.checkOut
-      ? Math.max(
-          0,
-          Math.ceil(
-            (new Date(form.checkOut).getTime() - new Date(form.checkIn).getTime()) /
-              (1000 * 60 * 60 * 24)
-          )
-        )
-      : 0;
+  const [dynamicPrice, setDynamicPrice] = useState<{ total: number; nights: number; dailyPrices?: any[] } | null>(null);
 
-  const totalPrice = nights * (property?.priceWeekday || 0);
+  // Fetch dynamic pricing when dates change
+  useEffect(() => {
+    if (!form.checkIn || !form.checkOut || !id) {
+      setDynamicPrice(null);
+      return;
+    }
+    fetch(`/api/public/pricing?propertyId=${id}&checkIn=${form.checkIn}&checkOut=${form.checkOut}`)
+      .then((r) => r.json())
+      .then(setDynamicPrice)
+      .catch(() => setDynamicPrice(null));
+  }, [form.checkIn, form.checkOut, id]);
+
+  const nights = dynamicPrice?.nights || (
+    form.checkIn && form.checkOut
+      ? Math.max(0, Math.ceil((new Date(form.checkOut).getTime() - new Date(form.checkIn).getTime()) / (1000 * 60 * 60 * 24)))
+      : 0
+  );
+
+  const totalPrice = dynamicPrice?.total || nights * (property?.priceWeekday || 0);
 
   const isDateBooked = (date: string) => {
     if (!property?.bookedRanges) return false;
@@ -78,6 +88,8 @@ export default function PropertyPage({ params }: { params: Promise<{ id: string 
     setBooking(false);
 
     if (res.ok) {
+      const data = await res.json();
+      setPaymentInfo({ paymentId: data.paymentId, paymentUrl: data.paymentUrl });
       setSuccess(true);
       toast.success("Бронирование отправлено!");
     } else {
@@ -213,11 +225,36 @@ export default function PropertyPage({ params }: { params: Promise<{ id: string 
                 {success ? (
                   <div className="text-center py-6">
                     <div className="text-5xl mb-3">✅</div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Бронирование отправлено!</h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                      Ожидайте подтверждения от владельца. Мы отправим вам сообщение в WhatsApp.
-                    </p>
-                    <Link href="/search">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Бронирование создано!</h3>
+                    {paymentInfo?.paymentUrl ? (
+                      <div className="space-y-3 mt-3">
+                        <p className="text-sm text-gray-600">Оплатите через Kaspi Pay:</p>
+                        <a
+                          href={paymentInfo.paymentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button className="w-full bg-red-500 hover:bg-red-600 text-lg py-5">
+                            Оплатить через Kaspi
+                          </Button>
+                        </a>
+                        <p className="text-xs text-gray-400">Заказ: {paymentInfo.paymentId}</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 mt-3">
+                        <p className="text-sm text-gray-600">
+                          Для оплаты переведите на Kaspi Gold владельца с указанием номера заказа:
+                        </p>
+                        <div className="bg-gray-100 rounded-lg p-3">
+                          <p className="font-mono font-bold text-lg">{paymentInfo?.paymentId}</p>
+                          <p className="text-sm text-gray-500 mt-1">{totalPrice.toLocaleString("ru-KZ")} ₸</p>
+                        </div>
+                        <p className="text-xs text-gray-400">
+                          После оплаты владелец подтвердит бронирование. Мы отправим уведомление в WhatsApp.
+                        </p>
+                      </div>
+                    )}
+                    <Link href="/search" className="block mt-4">
                       <Button variant="outline" className="w-full">Ещё квартиры</Button>
                     </Link>
                   </div>
@@ -245,11 +282,29 @@ export default function PropertyPage({ params }: { params: Promise<{ id: string 
                     </div>
 
                     {nights > 0 && (
-                      <div className="bg-blue-50 rounded-lg p-3 text-sm">
-                        <div className="flex justify-between">
-                          <span>{property.priceWeekday?.toLocaleString("ru-KZ")} ₸ x {nights} ноч.</span>
-                          <span className="font-semibold">{totalPrice.toLocaleString("ru-KZ")} ₸</span>
-                        </div>
+                      <div className="bg-blue-50 rounded-lg p-3 text-sm space-y-1">
+                        {dynamicPrice?.dailyPrices?.some((d: any) => d.multiplier > 1) ? (
+                          <>
+                            {dynamicPrice.dailyPrices.map((d: any) => (
+                              <div key={d.date} className="flex justify-between text-xs">
+                                <span className={d.multiplier > 1 ? "text-orange-600 font-medium" : ""}>
+                                  {new Date(d.date).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+                                  {d.multiplier > 1 && " ↑"}
+                                </span>
+                                <span>{d.finalPrice.toLocaleString("ru-KZ")} ₸</span>
+                              </div>
+                            ))}
+                            <div className="flex justify-between pt-1 border-t font-semibold">
+                              <span>Итого ({nights} ноч.)</span>
+                              <span>{totalPrice.toLocaleString("ru-KZ")} ₸</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex justify-between">
+                            <span>{property.priceWeekday?.toLocaleString("ru-KZ")} ₸ x {nights} ноч.</span>
+                            <span className="font-semibold">{totalPrice.toLocaleString("ru-KZ")} ₸</span>
+                          </div>
+                        )}
                       </div>
                     )}
 
