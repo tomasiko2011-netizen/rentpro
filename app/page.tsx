@@ -98,6 +98,9 @@ export default function LandingPage() {
             <span className="text-xl font-bold">RentPro</span>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/search">
+              <Button variant="ghost">Найти квартиру</Button>
+            </Link>
             <Link href="/login">
               <Button variant="ghost">Войти</Button>
             </Link>
