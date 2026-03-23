@@ -79,7 +79,8 @@ async function getBookingsForDate(userId: string, daysOffset: number): Promise<s
 
   const lines = dayBookings.map((b) => {
     const prop = allProps.find((p) => p.id === b.propertyId);
-    const statusIcon = { pending: "🟡", confirmed: "🔵", checked_in: "🟢", checked_out: "⚪" }[b.status] || "⚪";
+    const statusIcons: Record<string, string> = { pending: "🟡", confirmed: "🔵", checked_in: "🟢", checked_out: "⚪", cancelled: "❌" };
+    const statusIcon = statusIcons[b.status] || "⚪";
     return `${statusIcon} ${prop?.name || "?"}\n   ${b.guestName || "?"} (${b.guestPhone || "?"})\n   ${b.checkIn} → ${b.checkOut}, ${b.totalPrice?.toLocaleString("ru-KZ")} ₸`;
   });
 
