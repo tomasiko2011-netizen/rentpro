@@ -157,6 +157,173 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Why better — comparison */}
+      <section className="py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-4">
+            Почему RentPro, а не площадки?
+          </h2>
+          <p className="text-center text-gray-500 mb-10 max-w-2xl mx-auto">
+            Площадки берут комиссию с каждого бронирования. RentPro — фиксированная подписка.
+            Чем больше вы зарабатываете, тем больше экономите.
+          </p>
+
+          {/* Comparison table */}
+          <div className="overflow-x-auto mb-10">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b-2 border-gray-200">
+                  <th className="text-left py-3 px-4 font-medium text-gray-500"></th>
+                  <th className="py-3 px-4 text-center">
+                    <span className="text-gray-400 text-xs block">Доска объявлений</span>
+                    <span className="font-semibold text-gray-700">Krisha.kz</span>
+                  </th>
+                  <th className="py-3 px-4 text-center">
+                    <span className="text-gray-400 text-xs block">Глобальный</span>
+                    <span className="font-semibold text-gray-700">Booking.com</span>
+                  </th>
+                  <th className="py-3 px-4 text-center bg-blue-50 rounded-t-lg">
+                    <span className="text-blue-500 text-xs block">Сделано для КЗ</span>
+                    <span className="font-bold text-blue-700">RentPro</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { feature: "Комиссия", krisha: "15% с брони", booking: "15-18%", rentpro: "0% (подписка)", win: true },
+                  { feature: "Шахматка / PMS", krisha: "Нет", booking: "Нет", rentpro: "Есть", win: true },
+                  { feature: "WhatsApp бронирование", krisha: "Нет", booking: "Нет", rentpro: "Есть", win: true },
+                  { feature: "WhatsApp управление", krisha: "Нет", booking: "Нет", rentpro: "Есть", win: true },
+                  { feature: "Kaspi Pay", krisha: "Нет", booking: "Нет", rentpro: "Есть", win: true },
+                  { feature: "CRM гостей", krisha: "Нет", booking: "Частично", rentpro: "Есть", win: true },
+                  { feature: "Динамические цены", krisha: "Нет", booking: "Нет", rentpro: "Авто", win: true },
+                  { feature: "Финансовый учёт", krisha: "Нет", booking: "Нет", rentpro: "Есть", win: true },
+                  { feature: "Свой сайт бронирования", krisha: "Нет", booking: "Нет", rentpro: "Есть", win: true },
+                  { feature: "Города", krisha: "3 города", booking: "Весь мир", rentpro: "Весь КЗ", win: false },
+                ].map((row) => (
+                  <tr key={row.feature} className="border-b border-gray-100">
+                    <td className="py-3 px-4 font-medium text-gray-700">{row.feature}</td>
+                    <td className="py-3 px-4 text-center text-gray-500">{row.krisha}</td>
+                    <td className="py-3 px-4 text-center text-gray-500">{row.booking}</td>
+                    <td className={`py-3 px-4 text-center font-medium bg-blue-50 ${row.win ? "text-green-600" : "text-blue-600"}`}>
+                      {row.rentpro}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Savings calculator */}
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 md:p-8 border border-green-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
+              Сколько вы экономите с RentPro?
+            </h3>
+            <div className="grid md:grid-cols-3 gap-6 text-center">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Квартира 15 000 ₸/ночь, 20 ночей/мес</p>
+                <p className="text-lg font-semibold text-gray-900">Доход: 300 000 ₸</p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-4 py-2 bg-white rounded-lg">
+                  <span className="text-sm text-gray-600">Krisha (15%)</span>
+                  <span className="font-semibold text-red-500">-45 000 ₸</span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-2 bg-white rounded-lg">
+                  <span className="text-sm text-gray-600">Booking (17%)</span>
+                  <span className="font-semibold text-red-500">-51 000 ₸</span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-2 bg-green-100 rounded-lg border border-green-300">
+                  <span className="text-sm font-medium text-green-700">RentPro</span>
+                  <span className="font-bold text-green-700">-4 990 ₸</span>
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-center">
+                <p className="text-sm text-gray-500">Ваша экономия</p>
+                <p className="text-4xl font-bold text-green-600">40 010 ₸</p>
+                <p className="text-sm text-green-600 font-medium">каждый месяц</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* WhatsApp section */}
+      <section className="py-16 px-4 bg-green-600 text-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h2 className="text-3xl font-bold mb-4">
+                Всё через WhatsApp
+              </h2>
+              <p className="text-green-100 mb-6">
+                Гости бронируют, вы управляете — без скачивания приложений,
+                без регистрации на сайтах. Просто напишите в WhatsApp.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-sm">1</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Гость пишет в WhatsApp</p>
+                    <p className="text-green-100 text-sm">Выбирает квартиру, даты, получает цену</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-sm">2</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Оплата через Kaspi Pay</p>
+                    <p className="text-green-100 text-sm">QR-код прямо в чат, оплатил — бронь подтверждена</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-sm">3</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Хозяин получает уведомление</p>
+                    <p className="text-green-100 text-sm">Имя, телефон, даты, сумма — всё в WhatsApp</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-sm">4</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Управляйте через WhatsApp</p>
+                    <p className="text-green-100 text-sm">&laquo;Брони на завтра&raquo;, &laquo;Заблокируй 25-27&raquo;, &laquo;Доход за март&raquo;</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur">
+              <div className="space-y-3 font-mono text-sm">
+                <div className="bg-white/20 rounded-lg rounded-tl-none p-3 max-w-[80%]">
+                  Здравствуйте, квартира на 25-27 марта есть?
+                </div>
+                <div className="bg-green-500 rounded-lg rounded-tr-none p-3 max-w-[80%] ml-auto">
+                  Есть 3 варианта:<br />
+                  1. Студия на Абая — 12 000 ₸<br />
+                  2. 2-комн на Толе Би — 18 000 ₸<br />
+                  Напишите номер
+                </div>
+                <div className="bg-white/20 rounded-lg rounded-tl-none p-3 max-w-[80%]">
+                  1
+                </div>
+                <div className="bg-green-500 rounded-lg rounded-tr-none p-3 max-w-[80%] ml-auto">
+                  Студия на Абая, 2 ночи = 24 000 ₸<br />
+                  Оплатите через Kaspi: [QR]<br />
+                  Бронь подтвердится автоматически
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section className="py-16 px-4">
         <div className="max-w-5xl mx-auto">
