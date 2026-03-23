@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,15 @@ import { toast } from "sonner";
 
 // Embeddable widget: /widget?userId=xxx
 // Can be embedded via iframe on any website
-export default function WidgetPage() {
+export default function WidgetPageWrapper() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center text-gray-400">Загрузка...</div>}>
+      <WidgetPage />
+    </Suspense>
+  );
+}
+
+function WidgetPage() {
   const searchParams = useSearchParams();
   const userId = searchParams.get("userId");
   const [properties, setProperties] = useState<any[]>([]);
