@@ -14,8 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, X } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 const AMENITIES = [
   "Wi-Fi", "Кондиционер", "Стиральная машина", "Холодильник", "Микроволновка",
@@ -25,6 +26,8 @@ const AMENITIES = [
 export default function NewPropertyPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
     name: "",
     type: "apartment",
@@ -61,7 +64,7 @@ export default function NewPropertyPage() {
     const res = await fetch("/api/properties", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, photos }),
     });
     setLoading(false);
 
@@ -222,6 +225,58 @@ export default function NewPropertyPage() {
                 </button>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Фото</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3 mb-3">
+              {photos.map((url, i) => (
+                <div key={i} className="relative w-24 h-24 rounded-lg overflow-hidden border">
+                  <Image src={url} alt="" fill className="object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setPhotos(photos.filter((_, j) => j !== i))}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              <label className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 transition-colors">
+                <Upload className="w-5 h-5 text-gray-400" />
+                <span className="text-xs text-gray-400 mt-1">{uploading ? "..." : "Фото"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={async (e) => {
+                    const files = e.target.files;
+                    if (!files) return;
+                    setUploading(true);
+                    for (const file of Array.from(files)) {
+                      const fd = new FormData();
+                      fd.append("file", file);
+                      const res = await fetch("/api/upload", { method: "POST", body: fd });
+                      if (res.ok) {
+                        const { url } = await res.json();
+                        setPhotos((prev) => [...prev, url]);
+                      } else {
+                        toast.error("Ошибка загрузки фото");
+                      }
+                    }
+                    setUploading(false);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            <p className="text-xs text-gray-500">До 5 МБ на фото. Первое фото — обложка.</p>
           </CardContent>
         </Card>
 

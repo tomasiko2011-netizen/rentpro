@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, MapPin, Bed, Users, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import Image from "next/image";
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<any[]>([]);
@@ -48,9 +49,18 @@ export default function PropertiesPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {properties.map((p: any) => (
           <Card key={p.id} className="overflow-hidden">
-            <div className="h-40 bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center">
-              <span className="text-4xl">🏠</span>
-            </div>
+            {(() => {
+              const ph = JSON.parse(p.photos || "[]");
+              return ph.length > 0 ? (
+                <div className="relative h-40">
+                  <Image src={ph[0]} alt={p.name} fill className="object-cover" />
+                </div>
+              ) : (
+                <div className="h-40 bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center">
+                  <span className="text-4xl">🏠</span>
+                </div>
+              );
+            })()}
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-2">
                 <div>
