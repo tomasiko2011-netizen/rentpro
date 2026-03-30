@@ -132,6 +132,21 @@ export const blockedDates = sqliteTable("blocked_dates", {
   externalUid: text("external_uid"),  // UID from external iCal VEVENT
 });
 
+export const cleanings = sqliteTable("cleanings", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  propertyId: text("property_id").notNull().references(() => properties.id),
+  userId: text("user_id").notNull().references(() => users.id),
+  bookingId: text("booking_id").references(() => bookings.id),
+  date: text("date").notNull(), // "YYYY-MM-DD"
+  time: text("time"), // "14:00"
+  status: text("status", {
+    enum: ["pending", "in_progress", "done", "skipped"],
+  }).notNull().default("pending"),
+  assignee: text("assignee"), // cleaner name/phone
+  notes: text("notes"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+});
+
 export const notifications = sqliteTable("notifications", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id").notNull().references(() => users.id),

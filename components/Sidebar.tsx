@@ -10,6 +10,7 @@ import {
   Wallet,
   BarChart3,
   Radio,
+  Sparkles,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -22,6 +23,7 @@ const nav = [
   { href: "/guests", label: "Гости", icon: Users },
   { href: "/finance", label: "Финансы", icon: Wallet },
   { href: "/analytics", label: "Аналитика", icon: BarChart3 },
+  { href: "/cleanings", label: "Уборки", icon: Sparkles },
   { href: "/channels", label: "Каналы", icon: Radio },
   { href: "/settings", label: "Настройки", icon: Settings },
 ];

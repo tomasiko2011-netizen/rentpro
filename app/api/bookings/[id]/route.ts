@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { bookings } from "@/lib/db/schema";
+import { bookings, cleanings } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { pusherServer, EVENTS } from "@/lib/pusher";
 
@@ -28,6 +28,25 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     .returning();
 
   if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Auto-create cleaning task when booking is confirmed
+  if (body.status === "confirmed" && updated.checkOut) {
+    const existingCleaning = await db.select().from(cleanings).where(
+      and(eq(cleanings.bookingId, id), eq(cleanings.userId, userId))
+    ).limit(1);
+
+    if (existingCleaning.length === 0) {
+      await db.insert(cleanings).values({
+        propertyId: updated.propertyId,
+        userId,
+        bookingId: id,
+        date: updated.checkOut,
+        time: "12:00",
+        status: "pending",
+        notes: `Уборка после ${updated.guestName || "гостя"}`,
+      });
+    }
+  }
 
   try {
     await pusherServer.trigger(`user-${userId}`, EVENTS.BOOKING_UPDATED, updated);
