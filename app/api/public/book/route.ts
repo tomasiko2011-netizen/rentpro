@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { bookings, properties, guests, transactions } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { sendWhatsApp, templates } from "@/lib/waha";
 import { pusherServer, EVENTS } from "@/lib/pusher";
 import { createKaspiPayment, formatPaymentMessage } from "@/lib/kaspi";
+import { checkAvailability } from "@/lib/availability";
 
 // Public booking — no auth required. Guest books directly.
 export async function POST(req: NextRequest) {
@@ -30,17 +31,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Объект не найден" }, { status: 404 });
     }
 
-    // Check overlap
-    const existing = await db.select().from(bookings).where(eq(bookings.propertyId, propertyId));
-    const hasOverlap = existing.some(
-      (b) =>
-        b.status !== "cancelled" &&
-        b.checkIn < checkOut &&
-        b.checkOut > checkIn
-    );
-
-    if (hasOverlap) {
-      return NextResponse.json({ error: "Даты заняты" }, { status: 409 });
+    // Check availability (bookings + blocked dates from iCal)
+    const { available, reason } = await checkAvailability(propertyId, checkIn, checkOut);
+    if (!available) {
+      return NextResponse.json({ error: reason }, { status: 409 });
     }
 
     // Calculate price

@@ -32,6 +32,7 @@ export const properties = sqliteTable("properties", {
   checkInTime: text("check_in_time").notNull().default("14:00"),
   checkOutTime: text("check_out_time").notNull().default("12:00"),
   status: text("status", { enum: ["active", "inactive", "maintenance"] }).notNull().default("active"),
+  icalToken: text("ical_token"),
   createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
 });
 
@@ -127,6 +128,8 @@ export const blockedDates = sqliteTable("blocked_dates", {
   dateFrom: text("date_from").notNull(),
   dateTo: text("date_to").notNull(),
   reason: text("reason"),
+  source: text("source"),  // airbnb, booking, krisha, manual
+  externalUid: text("external_uid"),  // UID from external iCal VEVENT
 });
 
 export const notifications = sqliteTable("notifications", {

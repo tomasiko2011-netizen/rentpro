@@ -3,9 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { bookings, guests, properties, transactions } from "@/lib/db/schema";
-import { eq, and, or, gte, lte } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { pusherServer, EVENTS } from "@/lib/pusher";
 import { sendWhatsApp, templates } from "@/lib/waha";
+import { checkAvailability } from "@/lib/availability";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -39,22 +40,10 @@ export async function POST(req: NextRequest) {
   const userId = (session.user as { id: string }).id;
   const body = await req.json();
 
-  // Check for overlapping bookings
-  const overlaps = await db.select().from(bookings).where(
-    and(
-      eq(bookings.propertyId, body.propertyId),
-      or(
-        and(lte(bookings.checkIn, body.checkIn), gte(bookings.checkOut, body.checkIn)),
-        and(lte(bookings.checkIn, body.checkOut), gte(bookings.checkOut, body.checkOut)),
-        and(gte(bookings.checkIn, body.checkIn), lte(bookings.checkOut, body.checkOut)),
-      ),
-      // Exclude cancelled
-      eq(bookings.status, "confirmed"),
-    )
-  );
-
-  if (overlaps.length > 0) {
-    return NextResponse.json({ error: "Даты заняты" }, { status: 409 });
+  // Check availability (bookings + blocked dates from iCal)
+  const { available, reason } = await checkAvailability(body.propertyId, body.checkIn, body.checkOut);
+  if (!available) {
+    return NextResponse.json({ error: reason }, { status: 409 });
   }
 
   // Auto-create guest if guestName + guestPhone provided
