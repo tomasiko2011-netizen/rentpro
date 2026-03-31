@@ -141,10 +141,30 @@ export default function PropertyPage({ params }: { params: Promise<{ id: string 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Left: Property info */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Photo */}
-            <div className="h-64 md:h-80 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-50 flex items-center justify-center">
-              <span className="text-7xl">🏠</span>
-            </div>
+            {/* Photos */}
+            {(() => {
+              let photos: string[] = [];
+              try { photos = JSON.parse(property.photos || "[]"); } catch {}
+              if (photos.length > 0) {
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-xl overflow-hidden">
+                    <img src={photos[0]} alt={property.name} className="w-full h-64 md:h-80 object-cover" />
+                    {photos.length > 1 && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {photos.slice(1, 5).map((url: string, i: number) => (
+                          <img key={i} src={url} alt={`${property.name} ${i + 2}`} className="w-full h-full object-cover" />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              return (
+                <div className="h-64 md:h-80 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-50 flex items-center justify-center">
+                  <span className="text-7xl">🏠</span>
+                </div>
+              );
+            })()}
 
             {/* Title */}
             <div>

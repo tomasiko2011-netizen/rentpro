@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { properties, bookings } from "@/lib/db/schema";
-import { eq, and, or, gte, lte } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 // Public API — no auth required. Returns active properties with availability.
 export async function GET(req: NextRequest) {
@@ -10,9 +10,12 @@ export async function GET(req: NextRequest) {
   const checkIn = url.searchParams.get("checkIn");
   const checkOut = url.searchParams.get("checkOut");
   const guests = url.searchParams.get("guests");
+  const userId = url.searchParams.get("userId");
 
   // Get all active properties
-  let allProperties = await db.select().from(properties).where(eq(properties.status, "active"));
+  let allProperties = userId
+    ? await db.select().from(properties).where(and(eq(properties.status, "active"), eq(properties.userId, userId)))
+    : await db.select().from(properties).where(eq(properties.status, "active"));
 
   // Filter by city
   if (city) {

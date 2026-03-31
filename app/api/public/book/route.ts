@@ -6,6 +6,7 @@ import { sendWhatsApp, templates } from "@/lib/waha";
 import { pusherServer, EVENTS } from "@/lib/pusher";
 import { createKaspiPayment, formatPaymentMessage } from "@/lib/kaspi";
 import { checkAvailability } from "@/lib/availability";
+import { calculateRangePrice } from "@/lib/pricing";
 
 // Public booking — no auth required. Guest books directly.
 export async function POST(req: NextRequest) {
@@ -49,8 +50,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Simple pricing: weekday price * nights (TODO: weekend/holiday pricing)
-    const totalPrice = nights * property.priceWeekday;
+    // Dynamic pricing: weekday/weekend/holiday/surge
+    const rangePrice = await calculateRangePrice(propertyId, checkIn, checkOut);
+    const totalPrice = rangePrice.total;
 
     // Create or find guest
     const [guest] = await db

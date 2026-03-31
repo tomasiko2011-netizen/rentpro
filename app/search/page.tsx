@@ -125,8 +125,14 @@ export default function SearchPage() {
             return (
               <Link key={p.id} href={`/property/${p.id}?checkIn=${filters.checkIn}&checkOut=${filters.checkOut}`}>
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full">
-                  <div className="h-48 bg-gradient-to-br from-blue-100 to-indigo-50 flex items-center justify-center relative">
-                    <span className="text-5xl">🏠</span>
+                  <div className="h-48 bg-gradient-to-br from-blue-100 to-indigo-50 flex items-center justify-center relative overflow-hidden">
+                    {(() => {
+                      try {
+                        const photos = JSON.parse(p.photos || "[]");
+                        if (photos.length > 0) return <img src={photos[0]} alt={p.name} className="w-full h-full object-cover" />;
+                      } catch {}
+                      return <span className="text-5xl">🏠</span>;
+                    })()}
                     <Badge className="absolute top-3 left-3">{typeLabels[p.type] || p.type}</Badge>
                   </div>
                   <CardContent className="p-4">

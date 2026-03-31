@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
-const nav = [
+export const nav = [
   { href: "/calendar", label: "Шахматка", icon: CalendarDays },
   { href: "/properties", label: "Объекты", icon: Building2 },
   { href: "/bookings", label: "Бронирования", icon: BookOpen },

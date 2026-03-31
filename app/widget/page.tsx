@@ -28,10 +28,8 @@ function WidgetPage() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    fetch("/api/public/properties").then((r) => r.json()).then((data) => {
-      // If userId specified, filter to that owner's properties
-      setProperties(data);
-    });
+    const params = userId ? `?userId=${userId}` : "";
+    fetch(`/api/public/properties${params}`).then((r) => r.json()).then(setProperties);
   }, [userId]);
 
   const nights = form.checkIn && form.checkOut
