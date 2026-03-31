@@ -76,6 +76,27 @@ function LoginForm() {
               {loading ? "Вход..." : "Войти"}
             </Button>
           </form>
+          {/* Demo access */}
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-xs text-blue-700 font-medium mb-2">Демо-доступ:</p>
+            <div className="space-y-1">
+              {[
+                { email: "arman@rentpro.kz", label: "Арман (Standard, 6 объектов)" },
+                { email: "asel@rentpro.kz", label: "Асель (Pro, 7 объектов)" },
+              ].map((demo) => (
+                <button
+                  key={demo.email}
+                  type="button"
+                  className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-blue-100 transition-colors text-blue-800"
+                  onClick={() => { setEmail(demo.email); setPassword("demo123"); }}
+                >
+                  {demo.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-blue-500 mt-1">Пароль: demo123</p>
+          </div>
+
           <p className="text-center text-sm text-gray-500 mt-4">
             Нет аккаунта?{" "}
             <Link href="/register" className="text-blue-600 hover:underline">

@@ -128,9 +128,14 @@ export default function LandingPage() {
                 Попробовать бесплатно
               </Button>
             </Link>
+            <Link href="/login">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6">
+                Демо-вход
+              </Button>
+            </Link>
           </div>
           <p className="text-sm text-gray-400 mt-3">
-            Бесплатно до 2 объектов. Без карты.
+            Бесплатно до 2 объектов. Без карты. Или войдите в демо-аккаунт.
           </p>
         </div>
       </section>
