@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { bookings, guests, properties, transactions } from "@/lib/db/schema";
+import { bookings, guests, properties, transactions, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { pusherServer, EVENTS } from "@/lib/pusher";
 import { sendWhatsApp, templates } from "@/lib/waha";
 import { checkAvailability } from "@/lib/availability";
+import { createNotification } from "@/lib/notify";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -46,15 +47,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: reason }, { status: 409 });
   }
 
-  // Auto-create guest if guestName + guestPhone provided
+  // Find or create guest (deduplicate by phone)
   let guestId = body.guestId;
   if (!guestId && body.guestName && body.guestPhone) {
-    const [guest] = await db.insert(guests).values({
-      userId,
-      name: body.guestName,
-      phone: body.guestPhone,
-    }).returning();
-    guestId = guest.id;
+    const existingGuests = await db.select().from(guests).where(eq(guests.userId, userId));
+    const normalPhone = body.guestPhone.replace(/[\s\-+]/g, "");
+    const existing = existingGuests.find(g => g.phone?.replace(/[\s\-+]/g, "") === normalPhone);
+    if (existing) {
+      guestId = existing.id;
+    } else {
+      const [guest] = await db.insert(guests).values({
+        userId,
+        name: body.guestName,
+        phone: body.guestPhone,
+      }).returning();
+      guestId = guest.id;
+    }
   }
 
   // Calculate nights
@@ -93,27 +101,47 @@ export async function POST(req: NextRequest) {
     }).where(eq(guests.id, guestId));
   }
 
-  // Pusher realtime
+  // Notification + Pusher realtime
+  await createNotification(userId, "booking", "Новое бронирование", `${body.guestName || "Гость"} — ${body.checkIn} → ${body.checkOut}`);
   try {
     await pusherServer.trigger(`user-${userId}`, EVENTS.BOOKING_CREATED, booking);
   } catch {}
 
-  // WhatsApp notification to owner
-  const ownerPhone = session.user.email; // TODO: use actual phone from user profile
+  // WhatsApp notifications
   const [property] = await db.select().from(properties).where(eq(properties.id, booking.propertyId)).limit(1);
-  if (body.guestPhone && property) {
-    try {
-      await sendWhatsApp({
-        phone: body.guestPhone,
-        text: templates.bookingConfirmed(
-          body.guestName || "Гость",
-          property.name,
-          body.checkIn,
-          body.checkOut,
-          booking.totalPrice,
-        ),
-      });
-    } catch {}
+  if (property) {
+    // Notify guest
+    if (body.guestPhone) {
+      try {
+        await sendWhatsApp({
+          phone: body.guestPhone,
+          text: templates.bookingConfirmed(
+            body.guestName || "Гость",
+            property.name,
+            body.checkIn,
+            body.checkOut,
+            booking.totalPrice,
+          ),
+        });
+      } catch {}
+    }
+    // Notify owner
+    const [owner] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (owner?.phone) {
+      try {
+        await sendWhatsApp({
+          phone: owner.phone,
+          text: templates.newBookingOwner(
+            body.guestName || "Гость",
+            body.guestPhone || "",
+            property.name,
+            body.checkIn,
+            body.checkOut,
+            booking.totalPrice,
+          ),
+        });
+      } catch {}
+    }
   }
 
   return NextResponse.json(booking, { status: 201 });

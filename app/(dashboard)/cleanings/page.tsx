@@ -3,7 +3,23 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Check, Clock, SkipForward, Play } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Sparkles, Check, Clock, SkipForward, Play, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 interface Cleaning {
   id: string;
@@ -33,6 +49,14 @@ export default function CleaningsPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [dialog, setDialog] = useState(false);
+  const [newCleaning, setNewCleaning] = useState({
+    propertyId: "",
+    date: new Date().toISOString().split("T")[0],
+    time: "14:00",
+    assignee: "",
+    notes: "",
+  });
 
   useEffect(() => {
     loadData();
@@ -58,6 +82,30 @@ export default function CleaningsPage() {
     setCleanings(prev => prev.map(c => c.id === id ? { ...c, status } : c));
   }
 
+  async function updateAssignee(id: string, assignee: string) {
+    await fetch("/api/cleanings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, assignee }),
+    });
+    setCleanings(prev => prev.map(c => c.id === id ? { ...c, assignee } : c));
+  }
+
+  async function handleCreateCleaning(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newCleaning.propertyId) { toast.error("Выберите объект"); return; }
+    const res = await fetch("/api/cleanings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newCleaning),
+    });
+    if (res.ok) {
+      toast.success("Уборка создана");
+      setDialog(false);
+      loadData();
+    }
+  }
+
   function getPropertyName(id: string) {
     return properties.find(p => p.id === id)?.name || "—";
   }
@@ -74,10 +122,10 @@ export default function CleaningsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Уборки</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <Badge variant="outline" className="text-sm">{todayCount} сегодня</Badge>
           <Badge variant="outline" className="text-sm">{pendingCount} ожидают</Badge>
-          <Badge variant="outline" className="text-sm text-green-600">{doneCount} готово</Badge>
+          <Button size="sm" onClick={() => setDialog(true)}><Plus className="w-4 h-4 mr-1" />Добавить</Button>
         </div>
       </div>
 
@@ -130,7 +178,15 @@ export default function CleaningsPage() {
                       {isPast && c.status === "pending" && <span className="ml-2 text-red-500 font-medium">Просрочено</span>}
                     </div>
                     {c.notes && <div className="text-xs text-gray-400 truncate">{c.notes}</div>}
-                    {c.assignee && <div className="text-xs text-gray-400">Исполнитель: {c.assignee}</div>}
+                    <div className="text-xs text-gray-400">
+                      Исполнитель:{" "}
+                      <input
+                        className="border-b border-dashed border-gray-300 bg-transparent outline-none w-28 text-gray-600"
+                        placeholder="назначить..."
+                        defaultValue={c.assignee || ""}
+                        onBlur={(e) => { if (e.target.value !== (c.assignee || "")) updateAssignee(c.id, e.target.value); }}
+                      />
+                    </div>
                   </div>
 
                   {/* Action buttons */}
@@ -166,6 +222,30 @@ export default function CleaningsPage() {
           })}
         </div>
       )}
+
+      <Dialog open={dialog} onOpenChange={setDialog}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Новая уборка</DialogTitle></DialogHeader>
+          <form onSubmit={handleCreateCleaning} className="space-y-3">
+            <div>
+              <Label>Объект</Label>
+              <Select value={newCleaning.propertyId} onValueChange={v => { if (v) setNewCleaning({ ...newCleaning, propertyId: v }); }}>
+                <SelectTrigger><SelectValue placeholder="Выберите объект" /></SelectTrigger>
+                <SelectContent>
+                  {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Дата</Label><Input type="date" value={newCleaning.date} onChange={e => setNewCleaning({ ...newCleaning, date: e.target.value })} /></div>
+              <div><Label>Время</Label><Input type="time" value={newCleaning.time} onChange={e => setNewCleaning({ ...newCleaning, time: e.target.value })} /></div>
+            </div>
+            <div><Label>Исполнитель</Label><Input value={newCleaning.assignee} onChange={e => setNewCleaning({ ...newCleaning, assignee: e.target.value })} placeholder="Имя / телефон" /></div>
+            <div><Label>Заметки</Label><Input value={newCleaning.notes} onChange={e => setNewCleaning({ ...newCleaning, notes: e.target.value })} /></div>
+            <Button type="submit" className="w-full">Создать</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

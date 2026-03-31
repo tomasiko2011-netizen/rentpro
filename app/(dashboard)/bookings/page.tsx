@@ -14,6 +14,7 @@ import {
 import BookingDialog from "@/components/booking/BookingDialog";
 import { Plus, Search, Phone, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { usePusherRefresh } from "@/lib/use-pusher";
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "Ожидание", variant: "outline" },
@@ -39,6 +40,7 @@ export default function BookingsPage() {
   };
 
   useEffect(() => { load(); }, []);
+  usePusherRefresh(load);
 
   const filtered = bookings
     .filter((b) => filter.status === "all" || b.status === filter.status)

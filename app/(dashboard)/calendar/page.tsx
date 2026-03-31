@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import CalendarGrid from "@/components/calendar/CalendarGrid";
 import BookingDialog from "@/components/booking/BookingDialog";
 import { toast } from "sonner";
+import { usePusherRefresh } from "@/lib/use-pusher";
 
 export default function CalendarPage() {
   const [properties, setProperties] = useState<any[]>([]);
@@ -24,6 +25,8 @@ export default function CalendarPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  usePusherRefresh(load);
 
   const handleCreateBooking = (propertyId: string, checkIn: string, checkOut: string) => {
     const property = properties.find((p: any) => p.id === propertyId);

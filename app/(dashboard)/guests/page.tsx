@@ -19,6 +19,7 @@ export default function GuestsPage() {
   const [guests, setGuests] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [dialog, setDialog] = useState(false);
+  const [editGuest, setEditGuest] = useState<any>(null);
   const [form, setForm] = useState({ name: "", phone: "", email: "", city: "", document: "", notes: "" });
 
   const load = () => fetch("/api/guests").then((r) => r.json()).then(setGuests);
@@ -44,6 +45,36 @@ export default function GuestsPage() {
       setForm({ name: "", phone: "", email: "", city: "", document: "", notes: "" });
       load();
     }
+  };
+
+  const toggleBlacklist = async (g: any) => {
+    await fetch("/api/guests", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: g.id, blacklisted: !g.blacklisted }),
+    });
+    setGuests(prev => prev.map(x => x.id === g.id ? { ...x, blacklisted: !x.blacklisted } : x));
+    toast.success(g.blacklisted ? "Убран из ЧС" : "Добавлен в ЧС");
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editGuest) return;
+    const res = await fetch("/api/guests", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: editGuest.id, ...form }),
+    });
+    if (res.ok) {
+      toast.success("Гость обновлён");
+      setEditGuest(null);
+      load();
+    }
+  };
+
+  const openEdit = (g: any) => {
+    setForm({ name: g.name, phone: g.phone || "", email: g.email || "", city: g.city || "", document: g.document || "", notes: g.notes || "" });
+    setEditGuest(g);
   };
 
   return (
@@ -102,10 +133,16 @@ export default function GuestsPage() {
                   )}
                 </div>
               </div>
-              <div className="text-right text-sm">
-                <div className="font-medium">{g.totalBookings} броней</div>
-                <div className="text-gray-500">
-                  {(g.totalSpent || 0).toLocaleString("ru-KZ")} ₸
+              <div className="flex items-center gap-3">
+                <div className="text-right text-sm">
+                  <div className="font-medium">{g.totalBookings} броней</div>
+                  <div className="text-gray-500">{(g.totalSpent || 0).toLocaleString("ru-KZ")} ₸</div>
+                </div>
+                <div className="flex gap-1">
+                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => openEdit(g)}>Ред.</Button>
+                  <Button size="sm" variant={g.blacklisted ? "outline" : "ghost"} className="h-7 text-xs" onClick={() => toggleBlacklist(g)}>
+                    <Ban className="w-3 h-3" />
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -155,6 +192,26 @@ export default function GuestsPage() {
               <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
             </div>
             <Button type="submit" className="w-full">Добавить</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editGuest} onOpenChange={(v) => { if (!v) setEditGuest(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Редактировать гостя</DialogTitle></DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-3">
+            <div><Label>Имя</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Телефон</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+              <div><Label>Email</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Город</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
+              <div><Label>Документ</Label><Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} /></div>
+            </div>
+            <div><Label>Заметки</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
+            <Button type="submit" className="w-full">Сохранить</Button>
           </form>
         </DialogContent>
       </Dialog>

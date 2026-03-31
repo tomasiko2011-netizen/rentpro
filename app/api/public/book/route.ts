@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { bookings, properties, guests, transactions } from "@/lib/db/schema";
+import { bookings, properties, guests, transactions, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { sendWhatsApp, templates } from "@/lib/waha";
 import { pusherServer, EVENTS } from "@/lib/pusher";
 import { createKaspiPayment, formatPaymentMessage } from "@/lib/kaspi";
 import { checkAvailability } from "@/lib/availability";
 import { calculateRangePrice } from "@/lib/pricing";
+import { createNotification } from "@/lib/notify";
 
 // Public booking — no auth required. Guest books directly.
 export async function POST(req: NextRequest) {
@@ -54,16 +55,22 @@ export async function POST(req: NextRequest) {
     const rangePrice = await calculateRangePrice(propertyId, checkIn, checkOut);
     const totalPrice = rangePrice.total;
 
-    // Create or find guest
-    const [guest] = await db
-      .insert(guests)
-      .values({
+    // Find or create guest (deduplicate by phone)
+    let guest;
+    const existingGuests = await db.select().from(guests)
+      .where(eq(guests.userId, property.userId));
+    const normalPhone = guestPhone.replace(/[\s\-+]/g, "");
+    guest = existingGuests.find(g => g.phone?.replace(/[\s\-+]/g, "") === normalPhone);
+    if (!guest) {
+      [guest] = await db.insert(guests).values({
         userId: property.userId,
         name: guestName,
         phone: guestPhone,
         email: guestEmail || null,
-      })
-      .returning();
+      }).returning();
+    } else if (guestEmail && !guest.email) {
+      await db.update(guests).set({ email: guestEmail }).where(eq(guests.id, guest.id));
+    }
 
     // Create booking
     const [booking] = await db
@@ -96,7 +103,8 @@ export async function POST(req: NextRequest) {
       description: `${guestName} — ${nights} ноч. (сайт)`,
     });
 
-    // Notify owner via Pusher
+    // Notification + Pusher
+    await createNotification(property.userId, "booking", "Новое бронирование с сайта", `${guestName} (${guestPhone}) — ${checkIn} → ${checkOut}, ${totalPrice.toLocaleString("ru-KZ")} ₸`);
     try {
       await pusherServer.trigger(`user-${property.userId}`, EVENTS.BOOKING_CREATED, booking);
     } catch {}
@@ -116,6 +124,17 @@ export async function POST(req: NextRequest) {
         phone: guestPhone,
         text: `${confirmMsg}\n\n${paymentMsg}`,
       });
+    } catch {}
+
+    // WhatsApp: notify owner
+    try {
+      const [owner] = await db.select().from(users).where(eq(users.id, property.userId)).limit(1);
+      if (owner?.phone) {
+        await sendWhatsApp({
+          phone: owner.phone,
+          text: templates.newBookingOwner(guestName, guestPhone, property.name, checkIn, checkOut, totalPrice),
+        });
+      }
     } catch {}
 
     return NextResponse.json({

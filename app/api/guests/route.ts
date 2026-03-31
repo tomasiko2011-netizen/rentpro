@@ -24,3 +24,21 @@ export async function POST(req: NextRequest) {
   const [guest] = await db.insert(guests).values({ ...body, userId }).returning();
   return NextResponse.json(guest, { status: 201 });
 }
+
+export async function PUT(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const userId = (session.user as { id: string }).id;
+  const body = await req.json();
+  const { id, ...updates } = body;
+
+  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+  const [updated] = await db.update(guests)
+    .set(updates)
+    .where(eq(guests.id, id))
+    .returning();
+
+  return NextResponse.json(updated);
+}

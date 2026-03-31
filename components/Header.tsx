@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -14,8 +14,34 @@ export default function Header() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const name = session?.user?.name || "User";
   const initials = name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+
+  const unread = notifications.filter(n => !n.read).length;
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const res = await fetch("/api/notifications");
+      if (res.ok) setNotifications(await res.json());
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [loadNotifications]);
+
+  const markAllRead = async () => {
+    await fetch("/api/notifications", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
 
   return (
     <header className="h-16 border-b bg-white flex items-center justify-between px-4 md:px-6">
@@ -71,9 +97,57 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5" />
-        </Button>
+        {/* Notifications */}
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            onClick={() => setNotifOpen(!notifOpen)}
+          >
+            <Bell className="w-5 h-5" />
+            {unread > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </Button>
+          {notifOpen && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setNotifOpen(false)} />
+              <div className="absolute right-0 top-10 w-80 bg-white border rounded-lg shadow-lg z-40 max-h-96 overflow-auto">
+                <div className="flex items-center justify-between p-3 border-b">
+                  <span className="text-sm font-semibold">Уведомления</span>
+                  {unread > 0 && (
+                    <button onClick={markAllRead} className="text-xs text-blue-600 hover:underline">
+                      Прочитать все
+                    </button>
+                  )}
+                </div>
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-gray-400">Нет уведомлений</div>
+                ) : (
+                  notifications.map(n => (
+                    <div
+                      key={n.id}
+                      className={cn(
+                        "px-3 py-2.5 border-b last:border-0 text-sm",
+                        !n.read && "bg-blue-50"
+                      )}
+                    >
+                      <p className="font-medium text-gray-900">{n.title}</p>
+                      {n.body && <p className="text-gray-500 text-xs mt-0.5">{n.body}</p>}
+                      <p className="text-gray-400 text-xs mt-1">
+                        {new Date(n.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
         <div className="flex items-center gap-2">
           <Avatar className="w-8 h-8">
             <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-medium">

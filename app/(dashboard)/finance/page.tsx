@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Wallet, Download } from "lucide-react";
 import { toast } from "sonner";
 
 const CATEGORIES = {
@@ -31,6 +31,10 @@ export default function FinancePage() {
     summary: { income: 0, expense: 0, profit: 0 },
   });
   const [dialog, setDialog] = useState(false);
+  const [dateFilter, setDateFilter] = useState({
+    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0],
+    to: new Date().toISOString().split("T")[0],
+  });
   const [form, setForm] = useState({
     type: "income" as "income" | "expense",
     category: "",
@@ -56,16 +60,57 @@ export default function FinancePage() {
     }
   };
 
-  const { summary, transactions } = data;
+  const { transactions } = data;
+
+  // Filter by date range
+  const filtered = transactions.filter(t => t.date >= dateFilter.from && t.date <= dateFilter.to);
+  const filteredSummary = {
+    income: filtered.filter(t => t.type === "income").reduce((s, t) => s + (t.amount || 0), 0),
+    expense: filtered.filter(t => t.type === "expense").reduce((s, t) => s + (t.amount || 0), 0),
+    get profit() { return this.income - this.expense; },
+  };
+
+  const exportCSV = () => {
+    const headers = "Дата;Тип;Категория;Сумма;Описание";
+    const rows = filtered
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(t => `${t.date};${t.type === "income" ? "Доход" : "Расход"};${t.category};${t.amount};${t.description || ""}`);
+    const csv = [headers, ...rows].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `finance_${dateFilter.from}_${dateFilter.to}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Финансы</h1>
-        <Button onClick={() => setDialog(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Добавить
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportCSV}>
+            <Download className="w-4 h-4 mr-2" />
+            CSV
+          </Button>
+          <Button onClick={() => setDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Добавить
+          </Button>
+        </div>
+      </div>
+
+      {/* Date filter */}
+      <div className="flex gap-3 mb-4 items-end">
+        <div>
+          <Label className="text-xs text-gray-500">С</Label>
+          <Input type="date" value={dateFilter.from} onChange={e => setDateFilter({ ...dateFilter, from: e.target.value })} className="w-40" />
+        </div>
+        <div>
+          <Label className="text-xs text-gray-500">По</Label>
+          <Input type="date" value={dateFilter.to} onChange={e => setDateFilter({ ...dateFilter, to: e.target.value })} className="w-40" />
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -78,7 +123,7 @@ export default function FinancePage() {
             <div>
               <p className="text-sm text-gray-500">Доходы</p>
               <p className="text-2xl font-bold text-green-600">
-                {summary.income?.toLocaleString("ru-KZ")} ₸
+                {filteredSummary.income.toLocaleString("ru-KZ")} ₸
               </p>
             </div>
           </CardContent>
@@ -91,7 +136,7 @@ export default function FinancePage() {
             <div>
               <p className="text-sm text-gray-500">Расходы</p>
               <p className="text-2xl font-bold text-red-600">
-                {summary.expense?.toLocaleString("ru-KZ")} ₸
+                {filteredSummary.expense.toLocaleString("ru-KZ")} ₸
               </p>
             </div>
           </CardContent>
@@ -104,7 +149,7 @@ export default function FinancePage() {
             <div>
               <p className="text-sm text-gray-500">Прибыль</p>
               <p className="text-2xl font-bold text-blue-600">
-                {summary.profit?.toLocaleString("ru-KZ")} ₸
+                {filteredSummary.profit.toLocaleString("ru-KZ")} ₸
               </p>
             </div>
           </CardContent>
@@ -114,11 +159,11 @@ export default function FinancePage() {
       {/* Transactions */}
       <Card>
         <CardHeader>
-          <CardTitle>Транзакции</CardTitle>
+          <CardTitle>Транзакции ({filtered.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {transactions
+            {filtered
               .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
               .map((t: any) => (
                 <div key={t.id} className="flex items-center justify-between py-2 border-b last:border-0">
@@ -132,8 +177,8 @@ export default function FinancePage() {
                 </div>
               ))}
           </div>
-          {transactions.length === 0 && (
-            <p className="text-center text-gray-400 py-8">Нет транзакций</p>
+          {filtered.length === 0 && (
+            <p className="text-center text-gray-400 py-8">Нет транзакций за выбранный период</p>
           )}
         </CardContent>
       </Card>
