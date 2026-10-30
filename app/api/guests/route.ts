@@ -31,7 +31,8 @@ export async function PUT(req: NextRequest) {
 
   const userId = (session.user as { id: string }).id;
   const body = await req.json();
-  const { id, userId: _ignored, ...updates } = body;
+  delete body.userId;
+  const { id, ...updates } = body;
 
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
