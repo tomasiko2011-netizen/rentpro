@@ -26,6 +26,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const userId = (session.user as { id: string }).id;
   const body = await req.json();
+  delete body.id;
+  delete body.userId;
 
   if (body.photos) body.photos = JSON.stringify(body.photos);
   if (body.amenities) body.amenities = JSON.stringify(body.amenities);
