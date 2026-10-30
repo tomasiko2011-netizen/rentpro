@@ -44,7 +44,7 @@ export async function createKaspiPayment({
           description,
           orderId: paymentId,
           returnUrl: returnUrl || `${process.env.NEXTAUTH_URL || "https://rentpro-nu.vercel.app"}/booking-success`,
-          callbackUrl: `${process.env.NEXTAUTH_URL || "https://rentpro-nu.vercel.app"}/api/payments/kaspi`,
+          callbackUrl: `${process.env.NEXTAUTH_URL || "https://rentpro-nu.vercel.app"}/api/payments/kaspi?secret=${encodeURIComponent(process.env.KASPI_WEBHOOK_SECRET || "")}`,
         }),
       });
 

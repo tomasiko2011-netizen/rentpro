@@ -6,6 +6,11 @@ import { sendWhatsApp } from "@/lib/waha";
 // WAHA webhook — receives incoming WhatsApp messages
 export async function POST(req: NextRequest) {
   try {
+    const secret = process.env.WAHA_WEBHOOK_SECRET;
+    if (!secret || req.nextUrl.searchParams.get("secret") !== secret) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
 
     if (body.event !== "message") return NextResponse.json({ ok: true });

@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { bookings } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 import { pusherServer, EVENTS } from "@/lib/pusher";
 import { sendWhatsApp, templates } from "@/lib/waha";
 
 // Kaspi Pay webhook — called when payment is completed
 export async function POST(req: NextRequest) {
   try {
+    // Пока нет HMAC от Kaspi: секрет в callbackUrl обязателен, без него вебхук закрыт
+    const secret = process.env.KASPI_WEBHOOK_SECRET;
+    if (!secret || req.nextUrl.searchParams.get("secret") !== secret) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
 
     // Extract payment info from Kaspi callback
@@ -18,13 +24,15 @@ export async function POST(req: NextRequest) {
     }
 
     // orderId format: "RP-XXXXXXXX" where XXXXXXXX is first 8 chars of booking ID
-    const bookingPrefix = orderId.replace("RP-", "").toLowerCase();
+    const bookingPrefix = String(orderId).replace(/^RP-/, "").toLowerCase();
+    if (!/^[0-9a-f]{8}$/.test(bookingPrefix)) {
+      return NextResponse.json({ error: "Bad orderId" }, { status: 400 });
+    }
 
-    // Find booking by prefix match
-    const allBookings = await db.select().from(bookings);
-    const booking = allBookings.find(
-      (b) => b.id.startsWith(bookingPrefix) && b.paymentStatus === "pending"
+    const matches = await db.select().from(bookings).where(
+      and(like(bookings.id, `${bookingPrefix}%`), eq(bookings.paymentStatus, "pending"))
     );
+    const booking = matches.length === 1 ? matches[0] : undefined;
 
     if (!booking) {
       console.error("Kaspi webhook: booking not found for", orderId);
