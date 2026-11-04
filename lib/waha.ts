@@ -1,4 +1,4 @@
-const WAHA_URL = process.env.WAHA_URL || "http://89.207.255.137:63012";
+const WAHA_URL = process.env.WAHA_URL || "";
 const WAHA_API_KEY = process.env.WAHA_API_KEY || "";
 
 interface SendMessageParams {
