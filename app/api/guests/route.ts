@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { guests } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -31,14 +31,16 @@ export async function PUT(req: NextRequest) {
 
   const userId = (session.user as { id: string }).id;
   const body = await req.json();
+  delete body.userId;
   const { id, ...updates } = body;
 
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
   const [updated] = await db.update(guests)
     .set(updates)
-    .where(eq(guests.id, id))
+    .where(and(eq(guests.id, id), eq(guests.userId, userId)))
     .returning();
 
+  if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(updated);
 }

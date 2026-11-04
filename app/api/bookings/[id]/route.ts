@@ -13,6 +13,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const userId = (session.user as { id: string }).id;
   const body = await req.json();
+  delete body.id;
+  delete body.userId;
 
   // Recalculate nights if dates changed
   if (body.checkIn && body.checkOut) {
